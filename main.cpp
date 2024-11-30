@@ -23,25 +23,46 @@ class Session
 {
 private:
   std::string m_word{WordList::getRandomWord()};
-  // char m_guess{};
-  // bool m_valid{};
+  int m_lives{6};
+  std::vector<bool> m_letterGuessed{std::vector<bool>(26)};
+  bool m_valid{};
+
+  std::size_t toIndex(char c) const { return static_cast<std::size_t>((c % 32) - 1); }
 
 public:
   std::string_view getWord() const { return m_word; }
+  int getLives() { return m_lives; }
+
+  bool isLetterGuessed(char c) const { return m_letterGuessed[toIndex(c)]; }
+  void setLetterGuessed(char c) { m_letterGuessed[toIndex(c)] = true; }
+  void removeLife() { m_lives--; }
 };
 
-void hideWord(Session &s)
+void draw(Session &s)
 {
   std::cout << '\n';
   std::cout << "The word:";
   for (auto letter : s.getWord())
   {
-    std::cout << " _";
+    if (s.isLetterGuessed(letter))
+      std::cout << " " << letter;
+    else
+      std::cout << " _";
   }
   std::cout << '\n';
 }
 
-char getLetterInput()
+bool hasBeenGuessed(Session &s, char &letter)
+{
+  if (!s.isLetterGuessed(letter))
+  {
+    s.setLetterGuessed(letter);
+    return false;
+  }
+  return true;
+}
+
+char getLetterInput(Session &s)
 {
   // Keep asking user until they enter valid input
   while (true)
@@ -66,6 +87,14 @@ char getLetterInput()
       std::cout << "Invalid input. Try again.\n";
       continue;
     }
+
+    if (hasBeenGuessed(s, letter))
+    {
+      std::cout << "Letter has been guessed. Try again.\n";
+      continue;
+    }
+
+    s.removeLife();
     return letter;
   }
 }
@@ -75,8 +104,14 @@ int main()
   startMessage();
 
   Session s{};
-  hideWord(s);
-  char letter{getLetterInput()};
 
-  std::cout << "You guessed: " << letter << '\n';
+  while (s.getLives())
+  {
+    draw(s);
+    std::cout << "You have " << s.getLives() << " lives left\n";
+    char letter{getLetterInput(s)};
+    std::cout << "You guessed: " << letter << '\n';
+  }
+
+  draw(s);
 }
