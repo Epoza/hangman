@@ -36,6 +36,26 @@ public:
   bool isLetterGuessed(char c) const { return m_letterGuessed[toIndex(c)]; }
   void setLetterGuessed(char c) { m_letterGuessed[toIndex(c)] = true; }
   void removeLife() { m_lives--; }
+
+  bool isLetterInWord(char letter)
+  {
+    for (auto c : m_word)
+    {
+      if (c == letter)
+        return true;
+    }
+    return false;
+  }
+
+  bool won()
+  {
+    for (auto c : m_word)
+    {
+      if (!isLetterGuessed(c))
+        return false;
+    }
+    return true;
+  }
 };
 
 void draw(Session &s)
@@ -49,6 +69,13 @@ void draw(Session &s)
     else
       std::cout << " _";
   }
+
+  std::cout << "\nWrong guesses:";
+
+  for (char c = 'a'; c <= 'z'; ++c)
+    if (s.isLetterGuessed(c) && !s.isLetterInWord(c))
+      std::cout << " [ " << c << " ]";
+
   std::cout << '\n';
 }
 
@@ -94,7 +121,6 @@ char getLetterInput(Session &s)
       continue;
     }
 
-    s.removeLife();
     return letter;
   }
 }
@@ -105,13 +131,16 @@ int main()
 
   Session s{};
 
-  while (s.getLives())
+  while (s.getLives() && !s.won())
   {
     draw(s);
     std::cout << "You have " << s.getLives() << " lives left\n";
     char letter{getLetterInput(s)};
-    std::cout << "You guessed: " << letter << '\n';
+    if (!s.isLetterInWord(letter))
+      s.removeLife();
   }
 
   draw(s);
+
+  !s.getLives() ? std::cout << "You lost! The word was: " << s.getWord() << '\n' : std::cout << "you won!\n";
 }
